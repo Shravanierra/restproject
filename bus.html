@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Bus Booking</title>
+    <style>
+        body {
+            background-color: bisque;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 30px;
+            color: blueviolet;
+        }
+    </style>
+</head>
+
+<h1><strong>Bus Booking</strong></h1>
+<label for="filter">Filter</label>
+<select name="filter" id="filter">
+    <option value="all">All</option>
+    <option value="bus1">Bus 1</option>
+    <option value="bus2">Bus 2</option>
+    <option value="bus3">Bus 3</option>
+</select>
+
+<body>
+    <form id="loginform">
+        <label for="name">Name: </label>
+        <input type="text" id="name" name="name" required>
+        <br>
+        <label for="email">Email: </label>
+        <input type="email" id="email" name="email" required>
+        <br>
+        <label for="no">Phone: </label>
+        <input type="number" id="no" name="no" required>
+        <br>
+        <label for="tb">Bus number: </label>
+        <select name="tb" id="tb">
+            <option value="1">Bus 1</option>
+            <option value="2">Bus 2</option>
+            <option value="3">Bus 3</option>
+        </select>
+        <button type="submit">Book</button>
+    </form>
+
+    <ul id="items" class="list-group"></ul>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const crudapi = "https://crudcrud.com/api/7643d1f319b042d1b2c1697ffd3f1701/items";
+            const listElem = document.getElementById("items");
+            const l = document.getElementById("loginform");
+
+            const nameInput = document.getElementById("name");
+            const emailInput = document.getElementById("email");
+            const numInput = document.getElementById("no");
+            const tbSelect = document.getElementById("tb");
+
+            l.addEventListener('submit', userinfo);
+
+            async function getdish() {
+                const response = await axios.get(crudapi);
+                listElem.innerHTML = '';
+                response.data.forEach(show);
+            }
+
+            async function userinfo(j) {
+                j.preventDefault();
+                const itemName = nameInput.value;
+                const itemEmail = emailInput.value;
+                const itemNum = numInput.value;
+                const itemTb = tbSelect.value;
+
+                const existingEntry = listElem.querySelector(`[data-name="${itemName}"]`);
+                if (existingEntry) {
+                    const prevItemId = existingEntry.dataset.itemId;
+                    del(prevItemId); // Delete the entry with the previous name
+                }
+
+                await axios.post(crudapi, { itemName, itemEmail, itemNum, itemTb });
+
+                nameInput.value = "";
+                emailInput.value = "";
+                numInput.value = "";
+                tbSelect.value = "";
+
+                getdish();
+            }
+
+            async function del(itemId) {
+                await axios.delete(crudapi + "/" + itemId);
+                getdish();
+            }
+
+            function edit(itemId, itemName, itemEmail, itemNum, itemTb) {
+                // Check if an entry with the same name exists
+                const existingEntry = listElem.querySelector(`[data-name="${itemName}"]`);
+                if (existingEntry) {
+                    const prevItemId = existingEntry.dataset.itemId;
+                    del(prevItemId); // Delete the entry with the previous name
+                }
+
+                nameInput.value = itemName;
+                emailInput.value = itemEmail;
+                numInput.value = itemNum;
+                tbSelect.value = itemTb;
+            }
+
+            function show(data) {
+                const itemsContainer = document.createElement("div");
+                itemsContainer.className = 'list-group-item';
+                itemsContainer.dataset.itemId = data._id;
+                itemsContainer.dataset.name = data.itemName;
+
+                const dishName = document.createElement("p");
+                dishName.innerHTML = `${data.itemName}  ${data.itemEmail} ${data.itemNum} <strong> Bus ${data.itemTb}</strong>`;
+
+                const editButton = document.createElement("button");
+                editButton.textContent = "Edit";
+                editButton.className = "btn btn-warning float-right";
+                editButton.addEventListener("click", () => {
+                    edit(data._id, data.itemName, data.itemEmail, data.itemNum, data.itemTb);
+                });
+
+                const deleteButton = document.createElement("button");
+                deleteButton.textContent = "Delete";
+                deleteButton.className = "btn btn-success float-right";
+                deleteButton.addEventListener("click", () => {
+                    del(data._id);
+                });
+
+                itemsContainer.appendChild(dishName);
+                itemsContainer.appendChild(editButton);
+                itemsContainer.appendChild(deleteButton);
+
+                listElem.prepend(itemsContainer);
+            }
+
+            getdish();
+        });
+    </script>
+</body>
+
+</html>
