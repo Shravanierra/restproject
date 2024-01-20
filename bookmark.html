@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Bookmark</title>
+    <style>
+        body {
+            background-color: bisque;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 30px;
+            color: blueviolet;
+        }
+        .list-group-item a {
+            text-decoration: none; 
+        }
+    </style>
+</head>
+
+<body>
+    <h1><strong>Bookmark Website</strong></h1>
+
+    <form id="loginform">
+        <label for="name">Website Title </label>
+        <input type="text" id="name" name="name" required>
+        <br>
+        <label for="no">Website URL</label>
+        <input type="text" id="no" name="no" required>
+        <br>
+        <button type="submit">Add</button>
+    </form>
+    <br>
+    <div id="bookmarks" class="list-group">
+        <h3>Book marks</h3>
+        <ul id="items" class="list-group"></ul>
+    </div>
+
+    <ul id="items" class="list-group"></ul>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const crudapi = "https://crudcrud.com/api/bd1523f7a8c44bd5846d628bdfc5d151/items";
+            const listElem = document.getElementById("items");
+            const l = document.getElementById("loginform");
+
+            const nameInput = document.getElementById("name");
+            const numInput = document.getElementById("no");
+
+            l.addEventListener('submit', userinfo);
+
+            async function getbook() {
+                const response = await axios.get(crudapi);
+                listElem.innerHTML = '';
+                response.data.forEach(show);
+            }
+
+            async function userinfo(j) {
+                j.preventDefault();
+                const itemName = nameInput.value;
+                const itemNum = numInput.value;
+
+                const existingEntry = listElem.querySelector(`[data-name="${itemName}"]`);
+                if (existingEntry) {
+                    const prevItemId = existingEntry.dataset.itemId;
+                    del(prevItemId);
+                }
+
+                await axios.post(crudapi, { itemName, itemNum });
+
+                nameInput.value = "";
+                numInput.value = "";
+
+                getbook();
+            }
+
+            async function del(itemId) {
+                await axios.delete(crudapi + "/" + itemId);
+                getbook();
+            }
+
+            function edit(itemId, itemName, itemNum) {
+                const existingEntry = listElem.querySelector(`[data-name="${itemName}"]`);
+                if (existingEntry) {
+                    const prevItemId = existingEntry.dataset.itemId;
+                    del(prevItemId); 
+                }
+
+                nameInput.value = itemName;
+                numInput.value = itemNum;
+            }
+
+            function show(data) {
+                const itemsContainer = document.createElement("div");
+                itemsContainer.className = 'list-group-item';
+                itemsContainer.dataset.itemId = data._id;
+                itemsContainer.dataset.name = data.itemName;
+
+                const urlLink = document.createElement("a");
+                urlLink.href = data.itemNum;
+                urlLink.target = "_blank"; 
+                urlLink.textContent = `${data.itemName} > ${data.itemNum}`;
+
+                urlLink.addEventListener("click", (event) => {
+                    event.preventDefault();
+                    window.open(data.itemNum, "_blank");
+                });
+
+                const editButton = document.createElement("button");
+                editButton.textContent = "Edit";
+                editButton.className = "btn btn-warning float-right";
+                editButton.addEventListener("click", () => {
+                    edit(data._id, data.itemName, data.itemNum);
+                });
+
+                const deleteButton = document.createElement("button");
+                deleteButton.textContent = "Delete";
+                deleteButton.className = "btn btn-success float-right";
+                deleteButton.addEventListener("click", () => {
+                    del(data._id);
+                });
+
+                itemsContainer.appendChild(urlLink);
+                itemsContainer.appendChild(editButton);
+                itemsContainer.appendChild(deleteButton);
+
+                listElem.appendChild(itemsContainer);
+            }
+
+            getbook();
+        });
+    </script>
+</body>
+
+</html>
